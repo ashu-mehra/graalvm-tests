@@ -14,11 +14,15 @@ Manifest-Version: 1.0
 Main-Class: UnsafeTest
 EOF
 
-jar cmf manifest.mf test.jar UnsafeTest.class UnsafeTest.java Data.class
-native-image --initialize-at-build-time=UnsafeTest,Data -jar test.jar test
+rm -f test.jar
+jar cmf manifest.mf test.jar UnsafeTest.class UnsafeTest.java
+# Create native image without the substitution class that recomputes the field
+native-image --initialize-at-build-time=UnsafeTest -jar test.jar test
 
-javac -cp .:${JAVA_HOME}/lib/svm/builder/svm.jar Data_Util.java
-jar cmf manifest.mf test-recompute.jar UnsafeTest.class UnsafeTest.java Data.class Data_Util.java Data_Util.class
-native-image --initialize-at-build-time=UnsafeTest,Data,Data_Util -jar test-recompute.jar test-recompute
+# UnsafeTest_Util is the substitution class that recomputes the field containing field offset
+javac -cp .:${JAVA_HOME}/lib/svm/builder/svm.jar UnsafeTest_Util.java
+rm -f test-recompute.jar
+jar cmf manifest.mf test-recompute.jar UnsafeTest.class UnsafeTest.java UnsafeTest_Util.java UnsafeTest_Util.class
+native-image --initialize-at-build-time=UnsafeTest,UnsafeTest_Util -jar test-recompute.jar test-recompute
 
 
